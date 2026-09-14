@@ -365,7 +365,12 @@ public with sharing class SummitEventsShared {
             eventIsClosed = !adminOpen;
         } else {
             eventIsClosed = checkCloseDateTime(evtInstance);
-            if (evtInstance.Current_Available_Capacity__c <= 0 || evtInstance.Active_Status__c != 'Active' || masterEventStatus != 'Active') {
+            // Capacity gate: closed at capacity UNLESS Enable_Waitlist__c is true (then form stays open and
+            // ConfirmationController stamps overflow as Waitlisted). Backward-compatible: when the flag is
+            // false or null the existing "close at capacity" behavior is preserved.
+            Boolean closedByCapacity = (evtInstance.Enable_Waitlist__c != true
+                    && evtInstance.Current_Available_Capacity__c <= 0);
+            if (closedByCapacity || evtInstance.Active_Status__c != 'Active' || masterEventStatus != 'Active') {
                 eventIsClosed = true;
             }
         }

@@ -16,6 +16,7 @@ public with sharing class SummitEventsConfirmationController {
     public Double existingPaymentAmount { get; set; }
     public Double eventOnlyPaymentAmount { get; set; }
     public Boolean paymentReceived { get; set; }
+    public Integer waitlistPosition { get; set; }
 
     private class questionData {
         String guestId { get; set; }
@@ -206,8 +207,23 @@ public with sharing class SummitEventsConfirmationController {
                             eventRegistration.Encrypted_Registration_Id_1__c = encryptedString;
                         }
 
-                        eventRegistration.Status__c = 'Registered';
+                        // Enable_Waitlist__c gate: when the Instance is full AND waitlist is enabled, overflow
+                        // registrations are stamped as Waitlisted instead of Registered. Additive branch — every
+                        // instance with waitlist off (or null) continues to hit the Registered path unchanged.
+                        if (eventInstance != null && eventInstance.Enable_Waitlist__c == true
+                                && eventInstance.Current_Available_Capacity__c != null
+                                && eventInstance.Current_Available_Capacity__c <= 0) {
+                            eventRegistration.Status__c = 'Waitlisted';
+                        } else {
+                            eventRegistration.Status__c = 'Registered';
+                        }
                         eventRegistration = regCRUD.updateRegistration(eventRegistration);
+
+                        // For waitlisted registrants, compute FIFO position (# of earlier Waitlisted + 1)
+                        // so the confirmation page can display "You're #N on the waitlist".
+                        if (eventRegistration.Status__c == 'Waitlisted') {
+                            waitlistPosition = regCRUD.getWaitlistPosition(eventRegistration.Event_Instance__c, eventRegistration.Id) + 1;
+                        }
 
                     } else {
                         ApexPages.addMessage(new ApexPages.Message(ApexPages.Severity.WARNING, 'Hosted guest record(s) could not be saved.'));
@@ -285,6 +301,19 @@ public with sharing class SummitEventsConfirmationController {
                 ApexPages.addMessage(new ApexPages.Message(ApexPages.Severity.WARNING, ex.getMessage()));
             }
             return newEvtReg;
+        }
+
+        // Counts Waitlisted registrations on the same Instance created BEFORE the one just saved.
+        // Caller adds 1 for human display. Guest-user friendly: runs in the same without-sharing CRUD context
+        // as the rest of the write path.
+        public Integer getWaitlistPosition(Id instanceId, Id registrationId) {
+            Summit_Events_Registration__c savedReg = [SELECT CreatedDate FROM Summit_Events_Registration__c WHERE Id = :registrationId LIMIT 1];
+            return [
+                SELECT COUNT() FROM Summit_Events_Registration__c
+                WHERE Event_Instance__c = :instanceId
+                AND Status__c = 'Waitlisted'
+                AND CreatedDate < :savedReg.CreatedDate
+            ];
         }
 
         public Boolean addGuestRegistration(List<Summit_Events_Registration__c> guestRegistrations) {

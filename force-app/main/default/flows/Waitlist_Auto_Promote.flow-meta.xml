@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>66.0</apiVersion>
+    <areMetricsLoggedToDataCloud>false</areMetricsLoggedToDataCloud>
+    <decisions>
+        <name>Has_Waitlisted_Person</name>
+        <label>Found Waitlisted Person?</label>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
+        <defaultConnectorLabel>No Waitlisted Found</defaultConnectorLabel>
+        <rules>
+            <name>Yes_Waitlisted_Found</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>Get_Next_Waitlisted</leftValueReference>
+                <operator>IsNull</operator>
+                <rightValue>
+                    <booleanValue>false</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Promote_To_Registered</targetReference>
+            </connector>
+            <label>Yes Waitlisted Found</label>
+        </rules>
+    </decisions>
+    <description>When a seated registration (Registered, Attended, or Pre-Registered) is cancelled, auto-promote the next waitlisted person to Registered. Pre-Registered counts against capacity via Count_of_Attendees__c inclusion (2026-09-10), so its cancellation genuinely frees a seat.</description>
+    <environments>Default</environments>
+    <interviewLabel>Waitlist Auto Promote {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>Waitlist Auto Promote</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>AUTO_LAYOUT_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>OriginBuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <recordLookups>
+        <name>Get_Next_Waitlisted</name>
+        <label>Get Next Waitlisted Registration</label>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
+        <assignNullValuesIfNoRecordsFound>false</assignNullValuesIfNoRecordsFound>
+        <connector>
+            <targetReference>Has_Waitlisted_Person</targetReference>
+        </connector>
+        <filterLogic>and</filterLogic>
+        <filters>
+            <field>Event_Instance__c</field>
+            <operator>EqualTo</operator>
+            <value>
+                <elementReference>$Record.Event_Instance__c</elementReference>
+            </value>
+        </filters>
+        <filters>
+            <field>Status__c</field>
+            <operator>EqualTo</operator>
+            <value>
+                <stringValue>Waitlisted</stringValue>
+            </value>
+        </filters>
+        <getFirstRecordOnly>true</getFirstRecordOnly>
+        <object>Summit_Events_Registration__c</object>
+        <sortField>CreatedDate</sortField>
+        <sortOrder>Asc</sortOrder>
+        <storeOutputAutomatically>true</storeOutputAutomatically>
+    </recordLookups>
+    <recordUpdates>
+        <name>Promote_To_Registered</name>
+        <label>Promote to Registered</label>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
+        <filterLogic>and</filterLogic>
+        <filters>
+            <field>Id</field>
+            <operator>EqualTo</operator>
+            <value>
+                <elementReference>Get_Next_Waitlisted.Id</elementReference>
+            </value>
+        </filters>
+        <inputAssignments>
+            <field>Status__c</field>
+            <value>
+                <stringValue>Registered</stringValue>
+            </value>
+        </inputAssignments>
+        <object>Summit_Events_Registration__c</object>
+    </recordUpdates>
+    <start>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
+        <connector>
+            <targetReference>Get_Next_Waitlisted</targetReference>
+        </connector>
+        <filterFormula>ISPICKVAL({!$Record.Status__c}, "Cancelled")
+&amp;&amp; (ISPICKVAL({!$Record__Prior.Status__c}, "Registered") || ISPICKVAL({!$Record__Prior.Status__c}, "Attended") || ISPICKVAL({!$Record__Prior.Status__c}, "Pre-Registered"))</filterFormula>
+        <object>Summit_Events_Registration__c</object>
+        <recordTriggerType>Update</recordTriggerType>
+        <triggerType>RecordAfterSave</triggerType>
+    </start>
+    <status>Active</status>
+</Flow>
