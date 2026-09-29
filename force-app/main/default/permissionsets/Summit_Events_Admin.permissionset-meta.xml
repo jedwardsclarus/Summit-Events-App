@@ -52,6 +52,10 @@
         <apexClass>SummitEventsSubmitController</apexClass>
         <enabled>true</enabled>
     </classAccesses>
+    <classAccesses>
+        <apexClass>WaitlistTrackerController</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
     <customSettingAccesses>
         <enabled>true</enabled>
         <name>Summit_Events_Settings__c</name>
@@ -545,6 +549,11 @@
     <fieldPermissions>
         <editable>false</editable>
         <field>Summit_Events_Instance__c.Current_Available_Capacity__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>Summit_Events_Instance__c.Enable_Waitlist__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>

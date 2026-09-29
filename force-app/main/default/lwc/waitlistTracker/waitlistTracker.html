@@ -11,31 +11,25 @@
         <div class="slds-p-horizontal_medium slds-p-bottom_medium">
             <!-- Summary -->
             <div class="slds-grid slds-gutters_x-small slds-m-bottom_medium">
-                <div class="slds-col slds-size_1-of-5 slds-text-align_center">
+                <div class="slds-col slds-size_1-of-4 slds-text-align_center">
                     <div style="background: #e8f5e9; border-radius: 8px; padding: 8px;">
                         <p style="font-size: 18px; font-weight: 700; color: #1b5e20;">{checkedInCount}</p>
                         <p style="font-size: 9px; color: #2e7d32; text-transform: uppercase;">Checked In</p>
                     </div>
                 </div>
-                <div class="slds-col slds-size_1-of-5 slds-text-align_center">
+                <div class="slds-col slds-size_1-of-4 slds-text-align_center">
                     <div style="background: #e3f2fd; border-radius: 8px; padding: 8px;">
                         <p style="font-size: 18px; font-weight: 700; color: #1565c0;">{registeredCount}</p>
                         <p style="font-size: 9px; color: #1976d2; text-transform: uppercase;">Registered</p>
                     </div>
                 </div>
-                <div class="slds-col slds-size_1-of-5 slds-text-align_center">
-                    <div style="background: #f3e5f5; border-radius: 8px; padding: 8px;">
-                        <p style="font-size: 18px; font-weight: 700; color: #6a1b9a;">{preRegisteredCount}</p>
-                        <p style="font-size: 9px; color: #6a1b9a; text-transform: uppercase;">Pre-Reg</p>
-                    </div>
-                </div>
-                <div class="slds-col slds-size_1-of-5 slds-text-align_center">
+                <div class="slds-col slds-size_1-of-4 slds-text-align_center">
                     <div style="background: #fdf6e3; border-radius: 8px; padding: 8px;">
                         <p style="font-size: 18px; font-weight: 700; color: #b8941f;">{waitlistedCount}</p>
                         <p style="font-size: 9px; color: #b8941f; text-transform: uppercase;">Waitlisted</p>
                     </div>
                 </div>
-                <div class="slds-col slds-size_1-of-5 slds-text-align_center">
+                <div class="slds-col slds-size_1-of-4 slds-text-align_center">
                     <div style="background: #ffebee; border-radius: 8px; padding: 8px;">
                         <p style="font-size: 18px; font-weight: 700; color: #c62828;">{cancelledCount}</p>
                         <p style="font-size: 9px; color: #c62828; text-transform: uppercase;">Cancelled</p>
@@ -53,7 +47,7 @@
                                 <div key={entry.id} class="slds-grid slds-grid_vertical-align-center" style="padding: 6px 8px; background: #f0faf0; border-radius: 6px; margin-bottom: 4px;">
                                     <div style="width: 7px; height: 7px; border-radius: 50%; background: #1b5e20; flex-shrink: 0; margin-right: 8px;"></div>
                                     <div style="flex: 1; min-width: 0;">
-                                        <a data-url={entry.regRecordUrl} onclick={handleContactClick} style="font-size: 12px; font-weight: 600; color: #1a365d; text-decoration: none; cursor: pointer;">{entry.contactName}</a>
+                                        <a href={entry.regRecordUrl} data-id={entry.id} onclick={handleContactClick} style="font-size: 12px; font-weight: 600; color: #1a365d; text-decoration: none; cursor: pointer;">{entry.contactName}</a>
                                         <p style="font-size: 10px; color: #555;">{entry.email}</p>
                                     </div>
                                     <span style="font-size: 9px; font-weight: 600; padding: 2px 8px; border-radius: 8px; background: #e8f5e9; color: #1b5e20;">Checked In</span>
@@ -72,38 +66,12 @@
                                 <div key={entry.id} class="slds-grid slds-grid_vertical-align-center" style="padding: 6px 8px; background: #f8f9fb; border-radius: 6px; margin-bottom: 4px;">
                                     <div style="width: 7px; height: 7px; border-radius: 50%; background: #1976d2; flex-shrink: 0; margin-right: 8px;"></div>
                                     <div style="flex: 1; min-width: 0;">
-                                        <a data-url={entry.regRecordUrl} onclick={handleContactClick} style="font-size: 12px; font-weight: 600; color: #1a365d; text-decoration: none; cursor: pointer;">{entry.contactName}</a>
+                                        <a href={entry.regRecordUrl} data-id={entry.id} onclick={handleContactClick} style="font-size: 12px; font-weight: 600; color: #1a365d; text-decoration: none; cursor: pointer;">{entry.contactName}</a>
                                         <p style="font-size: 10px; color: #555;">{entry.email}</p>
                                     </div>
                                     <div class="slds-grid" style="gap: 4px; flex-shrink: 0;">
                                         <button data-id={entry.id} data-name={entry.contactName} onclick={handleCheckIn}
                                             style="background: #1b5e20; color: white; border: none; border-radius: 6px; padding: 4px 10px; font-size: 10px; font-weight: 600; cursor: pointer;">Check In</button>
-                                        <button data-id={entry.id} data-name={entry.contactName} onclick={handleCancel}
-                                            style="background: #c62828; color: white; border: none; border-radius: 6px; padding: 4px 10px; font-size: 10px; font-weight: 600; cursor: pointer;">Cancel</button>
-                                    </div>
-                                </div>
-                            </template>
-                        </div>
-                    </div>
-                </template>
-
-                <!-- Pre-Registered -->
-                <template if:true={hasPreRegistered}>
-                    <div style="margin-bottom: 16px;">
-                        <p style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #6a1b9a; font-weight: 700; margin-bottom: 6px; padding-left: 4px;">Pre-Registered</p>
-                        <div style="max-height: 240px; overflow-y: auto; padding-right: 2px;">
-                            <template for:each={preRegisteredEntries} for:item="entry">
-                                <div key={entry.id} class="slds-grid slds-grid_vertical-align-center" style="padding: 6px 8px; background: #faf5fc; border-radius: 6px; margin-bottom: 4px;">
-                                    <div style="width: 7px; height: 7px; border-radius: 50%; background: #6a1b9a; flex-shrink: 0; margin-right: 8px;"></div>
-                                    <div style="flex: 1; min-width: 0;">
-                                        <a data-url={entry.regRecordUrl} onclick={handleContactClick} style="font-size: 12px; font-weight: 600; color: #1a365d; text-decoration: none; cursor: pointer;">{entry.contactName}</a>
-                                        <p style="font-size: 10px; color: #555;">{entry.email}</p>
-                                    </div>
-                                    <div class="slds-grid" style="gap: 4px; flex-shrink: 0;">
-                                        <button data-id={entry.id} data-name={entry.contactName} onclick={handleCheckIn}
-                                            style="background: #1b5e20; color: white; border: none; border-radius: 6px; padding: 4px 10px; font-size: 10px; font-weight: 600; cursor: pointer;">Check In</button>
-                                        <button data-id={entry.id} data-name={entry.contactName} onclick={handlePromoteToRegistered}
-                                            style="background: #1565c0; color: white; border: none; border-radius: 6px; padding: 4px 10px; font-size: 10px; font-weight: 600; cursor: pointer;">Register</button>
                                         <button data-id={entry.id} data-name={entry.contactName} onclick={handleCancel}
                                             style="background: #c62828; color: white; border: none; border-radius: 6px; padding: 4px 10px; font-size: 10px; font-weight: 600; cursor: pointer;">Cancel</button>
                                     </div>
@@ -124,7 +92,7 @@
                                         <span style="font-size: 11px; font-weight: 700; color: #b8941f;">{entry.positionDisplay}</span>
                                     </div>
                                     <div style="flex: 1; min-width: 0;">
-                                        <a data-url={entry.regRecordUrl} onclick={handleContactClick} style="font-size: 12px; font-weight: 600; color: #1a365d; text-decoration: none; cursor: pointer;">{entry.contactName}</a>
+                                        <a href={entry.regRecordUrl} data-id={entry.id} onclick={handleContactClick} style="font-size: 12px; font-weight: 600; color: #1a365d; text-decoration: none; cursor: pointer;">{entry.contactName}</a>
                                         <p style="font-size: 10px; color: #555;">{entry.email}</p>
                                     </div>
                                     <button data-id={entry.id} data-name={entry.contactName} onclick={handleCancel}

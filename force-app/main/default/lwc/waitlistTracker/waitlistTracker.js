@@ -4,7 +4,6 @@ import getWaitlist from '@salesforce/apex/WaitlistTrackerController.getWaitlist'
 import checkInRegistration from '@salesforce/apex/WaitlistTrackerController.checkInRegistration';
 import cancelRegistration from '@salesforce/apex/WaitlistTrackerController.cancelRegistration';
 import reinstateRegistration from '@salesforce/apex/WaitlistTrackerController.reinstateRegistration';
-import promoteToRegistered from '@salesforce/apex/WaitlistTrackerController.promoteToRegistered';
 import { refreshApex } from '@salesforce/apex';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 
@@ -36,19 +35,16 @@ export default class WaitlistTracker extends NavigationMixin(LightningElement) {
 
     get checkedInEntries() { return this.allEntries.filter(e => e.isCheckedIn); }
     get registeredEntries() { return this.allEntries.filter(e => e.isRegistered); }
-    get preRegisteredEntries() { return this.allEntries.filter(e => e.isPreRegistered); }
     get waitlistedEntries() { return this.allEntries.filter(e => e.isWaitlisted); }
     get cancelledEntries() { return this.allEntries.filter(e => e.isCancelled); }
 
     get hasCheckedIn() { return this.checkedInEntries.length > 0; }
     get hasRegistered() { return this.registeredEntries.length > 0; }
-    get hasPreRegistered() { return this.preRegisteredEntries.length > 0; }
     get hasWaitlisted() { return this.waitlistedEntries.length > 0; }
     get hasCancelled() { return this.cancelledEntries.length > 0; }
 
     get checkedInCount() { return this.checkedInEntries.length; }
     get registeredCount() { return this.registeredEntries.length; }
-    get preRegisteredCount() { return this.preRegisteredEntries.length; }
     get waitlistedCount() { return this.waitlistedEntries.length; }
     get cancelledCount() { return this.cancelledEntries.length; }
 
@@ -84,21 +80,6 @@ export default class WaitlistTracker extends NavigationMixin(LightningElement) {
             .finally(() => { this.isLoading = false; });
     }
 
-    handlePromoteToRegistered(event) {
-        const regId = event.currentTarget.dataset.id;
-        const name = event.currentTarget.dataset.name;
-        this.isLoading = true;
-        promoteToRegistered({ registrationId: regId })
-            .then(() => {
-                this.showToast('Promoted', name + ' moved to Registered', 'success');
-                return refreshApex(this._wiredResult);
-            })
-            .catch(error => {
-                this.showToast('Error', error.body ? error.body.message : 'Error', 'error');
-            })
-            .finally(() => { this.isLoading = false; });
-    }
-
     handleReinstate(event) {
         const regId = event.currentTarget.dataset.id;
         const name = event.currentTarget.dataset.name;
@@ -115,11 +96,12 @@ export default class WaitlistTracker extends NavigationMixin(LightningElement) {
     }
 
     handleContactClick(event) {
-        const url = event.currentTarget.dataset.url;
+        // The anchor carries a real href so it is keyboard-focusable; navigate in-app instead of a full page load
+        event.preventDefault();
         this[NavigationMixin.Navigate]({
             type: 'standard__recordPage',
             attributes: {
-                recordId: url.replace('/', ''),
+                recordId: event.currentTarget.dataset.id,
                 actionName: 'view'
             }
         });

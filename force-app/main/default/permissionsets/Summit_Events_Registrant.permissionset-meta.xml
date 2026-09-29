@@ -452,6 +452,11 @@
     </fieldPermissions>
     <fieldPermissions>
         <editable>false</editable>
+        <field>Summit_Events_Instance__c.Enable_Waitlist__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
         <field>Summit_Events_Instance__c.Event_Fee_Additional_Allocation_Override__c</field>
         <readable>true</readable>
     </fieldPermissions>

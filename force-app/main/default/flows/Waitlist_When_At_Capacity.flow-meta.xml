@@ -50,7 +50,7 @@
             <label>Full</label>
         </rules>
     </decisions>
-    <description>Before-save on Summit_Events_Registration__c. When a NEW registration (Status=Registered OR Pre-Registered) comes in and the parent Instance has capacity tracking on AND is at/over capacity AND Enable_Waitlist is true, flip Status to Waitlisted before commit. Belt-and-suspenders for non-wizard insert paths (imports, API, coordinator create). When Enable_Waitlist is false the form was already closed at capacity so this flow is a no-op guard. Attended (walk-ups bypass capacity by design) and Cancelled/Waitlisted (no-op) are excluded via the start filter.</description>
+    <description>Before-save on Summit_Events_Registration__c. When a NEW registration with Status=Registered comes in and the parent Instance has capacity tracking on AND is at/over capacity AND Enable_Waitlist is true, flip Status to Waitlisted before commit. Guard for non-wizard, one-at-a-time insert paths (coordinator create, single API insert); the wizard itself inserts as Started and is handled by SummitEventsConfirmationController. Not a seat allocator for bulk loads: every record in one batch reads the same pre-batch capacity, so bulk imports into a nearly full instance should be seated deliberately. No-op when Enable_Waitlist is false.</description>
     <environments>Default</environments>
     <interviewLabel>Waitlist When At Capacity {!$Flow.CurrentDateTime}</interviewLabel>
     <label>Waitlist When At Capacity</label>
@@ -87,7 +87,7 @@
             <targetReference>Get_Instance</targetReference>
         </connector>
         <filterFormula>AND(
-    OR(ISPICKVAL({!$Record.Status__c}, 'Registered'), ISPICKVAL({!$Record.Status__c}, 'Pre-Registered')),
+    ISPICKVAL({!$Record.Status__c}, 'Registered'),
     NOT(ISBLANK({!$Record.Event_Instance__c}))
 )</filterFormula>
         <object>Summit_Events_Registration__c</object>
