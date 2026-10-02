@@ -24,8 +24,15 @@
             <label>Yes Waitlisted Found</label>
         </rules>
     </decisions>
-    <description>When a seated registration (Registered, Attended, or Pre-Registered) is cancelled, auto-promote the next waitlisted person to Registered. Pre-Registered counts against capacity via Count_of_Attendees__c inclusion (2026-09-10), so its cancellation genuinely frees a seat.</description>
+    <description>When a seated registration (Registered, Confirmed or Attended) on a waitlist-enabled Instance is cancelled, promote the earliest waitlisted registration that fits in the freed seats to Registered. In Registrants plus Guests mode a party only fits if its Total_Number_of_Guests__c is no larger than the cancelled party's, so a promotion never overfills the instance. Hosted guests do not hold a seat in Individual Registrants mode, so cancelling one does not promote anyone.</description>
     <environments>Default</environments>
+    <formulas>
+        <description>Largest party that fits in the seats freed by this cancellation. Individual Registrants mode counts one seat per registration, so any waitlisted registration fits.</description>
+        <name>maxPartySize</name>
+        <dataType>Number</dataType>
+        <expression>IF(ISPICKVAL({!$Record.Event_Instance__r.Capacity_Control__c}, &quot;Registrants plus Guests&quot;), {!$Record.Total_Number_of_Guests__c}, 1000000)</expression>
+        <scale>0</scale>
+    </formulas>
     <interviewLabel>Waitlist Auto Promote {!$Flow.CurrentDateTime}</interviewLabel>
     <label>Waitlist Auto Promote</label>
     <processMetadataValues>
@@ -71,6 +78,13 @@
                 <stringValue>Waitlisted</stringValue>
             </value>
         </filters>
+        <filters>
+            <field>Total_Number_of_Guests__c</field>
+            <operator>LessThanOrEqualTo</operator>
+            <value>
+                <elementReference>maxPartySize</elementReference>
+            </value>
+        </filters>
         <getFirstRecordOnly>true</getFirstRecordOnly>
         <object>Summit_Events_Registration__c</object>
         <sortField>CreatedDate</sortField>
@@ -105,7 +119,9 @@
             <targetReference>Get_Next_Waitlisted</targetReference>
         </connector>
         <filterFormula>ISPICKVAL({!$Record.Status__c}, "Cancelled")
-&amp;&amp; (ISPICKVAL({!$Record__Prior.Status__c}, "Registered") || ISPICKVAL({!$Record__Prior.Status__c}, "Attended") || ISPICKVAL({!$Record__Prior.Status__c}, "Pre-Registered"))</filterFormula>
+&amp;&amp; (ISPICKVAL({!$Record__Prior.Status__c}, "Registered") || ISPICKVAL({!$Record__Prior.Status__c}, "Confirmed") || ISPICKVAL({!$Record__Prior.Status__c}, "Attended"))
+&amp;&amp; {!$Record.Event_Instance__r.Enable_Waitlist__c}
+&amp;&amp; NOT(NOT(ISPICKVAL({!$Record.Event_Instance__r.Capacity_Control__c}, "Registrants plus Guests")) &amp;&amp; ISPICKVAL({!$Record.Guest_Host_Status__c}, "Hosted registrant"))</filterFormula>
         <object>Summit_Events_Registration__c</object>
         <recordTriggerType>Update</recordTriggerType>
         <triggerType>RecordAfterSave</triggerType>

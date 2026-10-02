@@ -130,7 +130,7 @@ global with sharing class SummitEventsFeed {
             }
         }
         if (hideClosed) {
-            eventQuery += ' AND (Current_Available_Capacity__c > 0 OR Capacity__c = null) ';
+            eventQuery += ' AND (Current_Available_Capacity__c > 0 OR Capacity__c = null OR Enable_Waitlist__c = true) ';
         }
         // build and sanitize the where statement that have variables
 

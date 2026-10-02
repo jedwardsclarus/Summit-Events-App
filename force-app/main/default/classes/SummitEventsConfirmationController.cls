@@ -210,19 +210,20 @@ public with sharing class SummitEventsConfirmationController {
                         // Enable_Waitlist__c gate: when the Instance is full AND waitlist is enabled, overflow
                         // registrations are stamped as Waitlisted instead of Registered. Additive branch — every
                         // instance with waitlist off (or null) continues to hit the Registered path unchanged.
+                        // Capacity of 0 or blank means capacity is not tracked, matching the flows and tracker.
                         if (eventInstance != null && eventInstance.Enable_Waitlist__c == true
-                                && eventInstance.Current_Available_Capacity__c != null
-                                && eventInstance.Current_Available_Capacity__c <= 0) {
+                                && regCRUD.isInstanceFull(eventInstance.Id)) {
                             eventRegistration.Status__c = 'Waitlisted';
                         } else {
                             eventRegistration.Status__c = 'Registered';
                         }
                         eventRegistration = regCRUD.updateRegistration(eventRegistration);
 
-                        // For waitlisted registrants, compute FIFO position (# of earlier Waitlisted + 1)
-                        // so the confirmation page can display "You're #N on the waitlist".
+                        // For waitlisted registrants, compute FIFO position (# ahead + 1) so the confirmation
+                        // page can display "You're #N on the waitlist". Null when the save did not land.
                         if (eventRegistration.Status__c == 'Waitlisted') {
-                            waitlistPosition = regCRUD.getWaitlistPosition(eventRegistration.Event_Instance__c, eventRegistration.Id) + 1;
+                            Integer ahead = regCRUD.getWaitlistPosition(eventRegistration.Event_Instance__c, eventRegistration.Id);
+                            waitlistPosition = ahead != null ? ahead + 1 : null;
                         }
 
                     } else {
@@ -303,16 +304,32 @@ public with sharing class SummitEventsConfirmationController {
             return newEvtReg;
         }
 
-        // Counts Waitlisted registrations on the same Instance created BEFORE the one just saved.
-        // Caller adds 1 for human display. Guest-user friendly: runs in the same without-sharing CRUD context
-        // as the rest of the write path.
+        // Re-reads capacity with a row lock so two submissions racing for the last seat are serialized:
+        // the second waits for the first to commit and then sees the updated count.
+        public Boolean isInstanceFull(Id instanceId) {
+            Summit_Events_Instance__c inst = [
+                SELECT Capacity__c, Current_Available_Capacity__c
+                FROM Summit_Events_Instance__c
+                WHERE Id = :instanceId
+                FOR UPDATE
+            ];
+            return inst.Capacity__c != null && inst.Capacity__c > 0
+                    && inst.Current_Available_Capacity__c != null && inst.Current_Available_Capacity__c <= 0;
+        }
+
+        // Counts Waitlisted registrations on the same Instance ahead of this one (CreatedDate, then Id).
+        // Returns null if the saved record is not actually Waitlisted (e.g. the update failed), so the page
+        // never shows a position that the database does not reflect. Caller adds 1 for human display.
         public Integer getWaitlistPosition(Id instanceId, Id registrationId) {
-            Summit_Events_Registration__c savedReg = [SELECT CreatedDate FROM Summit_Events_Registration__c WHERE Id = :registrationId LIMIT 1];
+            Summit_Events_Registration__c savedReg = [SELECT Status__c, CreatedDate FROM Summit_Events_Registration__c WHERE Id = :registrationId LIMIT 1];
+            if (savedReg.Status__c != 'Waitlisted') {
+                return null;
+            }
             return [
                 SELECT COUNT() FROM Summit_Events_Registration__c
                 WHERE Event_Instance__c = :instanceId
                 AND Status__c = 'Waitlisted'
-                AND CreatedDate < :savedReg.CreatedDate
+                AND (CreatedDate < :savedReg.CreatedDate OR (CreatedDate = :savedReg.CreatedDate AND Id < :registrationId))
             ];
         }
 
