@@ -1,10 +1,10 @@
 import { LightningElement, api, wire } from 'lwc';
 import { NavigationMixin } from 'lightning/navigation';
-import getWaitlist from '@salesforce/apex/WaitlistTrackerController.getWaitlist';
-import checkInRegistration from '@salesforce/apex/WaitlistTrackerController.checkInRegistration';
-import cancelRegistration from '@salesforce/apex/WaitlistTrackerController.cancelRegistration';
-import reinstateRegistration from '@salesforce/apex/WaitlistTrackerController.reinstateRegistration';
-import promoteToRegistered from '@salesforce/apex/WaitlistTrackerController.promoteToRegistered';
+import getWaitlist from '@salesforce/apex/SummitEventsWaitlistTrackerController.getWaitlist';
+import checkInRegistration from '@salesforce/apex/SummitEventsWaitlistTrackerController.checkInRegistration';
+import cancelRegistration from '@salesforce/apex/SummitEventsWaitlistTrackerController.cancelRegistration';
+import reinstateRegistration from '@salesforce/apex/SummitEventsWaitlistTrackerController.reinstateRegistration';
+import promoteToRegistered from '@salesforce/apex/SummitEventsWaitlistTrackerController.promoteToRegistered';
 import { refreshApex } from '@salesforce/apex';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 

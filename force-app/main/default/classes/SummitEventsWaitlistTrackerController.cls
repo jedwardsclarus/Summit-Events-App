@@ -1,17 +1,17 @@
-public with sharing class WaitlistTrackerController {
+public with sharing class SummitEventsWaitlistTrackerController {
     @AuraEnabled(cacheable=true)
     public static List<WaitlistEntry> getWaitlist(Id instanceId) {
         List<WaitlistEntry> entries = new List<WaitlistEntry>();
         Integer position = 0;
 
         List<Summit_Events_Registration__c> registrations = [
-            SELECT Id, Name, Status__c, Substatus__c, Contact__c, Contact__r.Name,
-                   Registrant_First_Name__c, Registrant_Last_Name__c,
-                   Registrant_Email__c, CreatedDate
-            FROM Summit_Events_Registration__c
-            WHERE Event_Instance__c = :instanceId
-            AND Status__c IN ('Pre-Registered', 'Registered', 'Waitlisted', 'Confirmed', 'Cancelled', 'Attended')
-            ORDER BY CreatedDate ASC
+                SELECT Id, Name, Status__c, Substatus__c, Contact__c, Contact__r.Name,
+                        Registrant_First_Name__c, Registrant_Last_Name__c,
+                        Registrant_Email__c, CreatedDate
+                FROM Summit_Events_Registration__c
+                WHERE Event_Instance__c = :instanceId
+                AND Status__c IN ('Pre-Registered', 'Registered', 'Waitlisted', 'Confirmed', 'Cancelled', 'Attended')
+                ORDER BY CreatedDate ASC
         ];
 
         // Sort by status priority: Attended (0), Registered (1), Pre-Registered (2), Waitlisted (3), Cancelled (4)
@@ -23,11 +23,17 @@ public with sharing class WaitlistTrackerController {
         List<Summit_Events_Registration__c> waitlisted = new List<Summit_Events_Registration__c>();
         List<Summit_Events_Registration__c> cancelled = new List<Summit_Events_Registration__c>();
         for (Summit_Events_Registration__c r : registrations) {
-            if (r.Status__c == 'Attended' || (r.Status__c == 'Confirmed' && r.Substatus__c == 'Attended')) { checkedIn.add(r); }
-            else if (r.Status__c == 'Registered') { registered.add(r); }
-            else if (r.Status__c == 'Pre-Registered') { preRegistered.add(r); }
-            else if (r.Status__c == 'Waitlisted') { waitlisted.add(r); }
-            else { cancelled.add(r); }
+            if (r.Status__c == 'Attended' || (r.Status__c == 'Confirmed' && r.Substatus__c == 'Attended')) {
+                checkedIn.add(r);
+            } else if (r.Status__c == 'Registered') {
+                registered.add(r);
+            } else if (r.Status__c == 'Pre-Registered') {
+                preRegistered.add(r);
+            } else if (r.Status__c == 'Waitlisted') {
+                waitlisted.add(r);
+            } else {
+                cancelled.add(r);
+            }
         }
         sorted.addAll(checkedIn);
         sorted.addAll(registered);
@@ -93,11 +99,11 @@ public with sharing class WaitlistTrackerController {
     public static void reinstateRegistration(Id registrationId) {
         // Bring a cancelled registrant back. Open spot → Registered. Full → Waitlisted at the back of the line.
         Summit_Events_Registration__c reg = [
-            SELECT Id, Status__c, Substatus__c, Event_Instance__c,
-                   Event_Instance__r.Capacity__c,
-                   Event_Instance__r.Current_Available_Capacity__c
-            FROM Summit_Events_Registration__c
-            WHERE Id = :registrationId
+                SELECT Id, Status__c, Substatus__c, Event_Instance__c,
+                        Event_Instance__r.Capacity__c,
+                        Event_Instance__r.Current_Available_Capacity__c
+                FROM Summit_Events_Registration__c
+                WHERE Id = :registrationId
         ];
 
         Decimal capacity = reg.Event_Instance__r.Capacity__c;

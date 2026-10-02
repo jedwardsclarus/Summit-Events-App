@@ -1,5 +1,5 @@
 @IsTest
-private class WaitlistTrackerController_TEST {
+private class SummitEventsWaitlistTrackerCtrl_TEST {
 
     private static Summit_Events_Instance__c makeInstance(Decimal capacity) {
         Summit_Events__c evt = new Summit_Events__c(
@@ -14,8 +14,7 @@ private class WaitlistTrackerController_TEST {
                 Active_Status__c = 'Active',
                 Capacity__c = capacity,
                 Instance_Start_Date__c = Date.today().addDays(7),
-                Instance_End_Date__c = Date.today().addDays(7),
-                Registration_Close_Date__c = Date.today().addDays(6)
+                Instance_End_Date__c = Date.today().addDays(7)
         );
         insert inst;
         return inst;
@@ -39,7 +38,7 @@ private class WaitlistTrackerController_TEST {
         Summit_Events_Registration__c reg = makeReg(inst, 'Registered', 'CheckMe');
 
         Test.startTest();
-        WaitlistTrackerController.checkInRegistration(reg.Id);
+        SummitEventsWaitlistTrackerController.checkInRegistration(reg.Id);
         Test.stopTest();
 
         Summit_Events_Registration__c after = [SELECT Status__c, Substatus__c FROM Summit_Events_Registration__c WHERE Id = :reg.Id];
@@ -52,7 +51,7 @@ private class WaitlistTrackerController_TEST {
         Summit_Events_Registration__c reg = makeReg(inst, 'Registered', 'CancelMe');
 
         Test.startTest();
-        WaitlistTrackerController.cancelRegistration(reg.Id);
+        SummitEventsWaitlistTrackerController.cancelRegistration(reg.Id);
         Test.stopTest();
 
         Summit_Events_Registration__c after = [SELECT Status__c FROM Summit_Events_Registration__c WHERE Id = :reg.Id];
@@ -64,7 +63,7 @@ private class WaitlistTrackerController_TEST {
         Summit_Events_Registration__c reg = makeReg(inst, 'Cancelled', 'Comeback');
 
         Test.startTest();
-        WaitlistTrackerController.reinstateRegistration(reg.Id);
+        SummitEventsWaitlistTrackerController.reinstateRegistration(reg.Id);
         Test.stopTest();
 
         Summit_Events_Registration__c after = [SELECT Status__c FROM Summit_Events_Registration__c WHERE Id = :reg.Id];
@@ -77,7 +76,7 @@ private class WaitlistTrackerController_TEST {
         Summit_Events_Registration__c reg = makeReg(inst, 'Cancelled', 'BackFromDead');
 
         Test.startTest();
-        WaitlistTrackerController.reinstateRegistration(reg.Id);
+        SummitEventsWaitlistTrackerController.reinstateRegistration(reg.Id);
         Test.stopTest();
 
         Summit_Events_Registration__c after = [SELECT Status__c FROM Summit_Events_Registration__c WHERE Id = :reg.Id];
@@ -89,7 +88,7 @@ private class WaitlistTrackerController_TEST {
         Summit_Events_Registration__c reg = makeReg(inst, 'Cancelled', 'Unlimited');
 
         Test.startTest();
-        WaitlistTrackerController.reinstateRegistration(reg.Id);
+        SummitEventsWaitlistTrackerController.reinstateRegistration(reg.Id);
         Test.stopTest();
 
         Summit_Events_Registration__c after = [SELECT Status__c FROM Summit_Events_Registration__c WHERE Id = :reg.Id];
@@ -105,7 +104,7 @@ private class WaitlistTrackerController_TEST {
         makeReg(inst, 'Attended', 'E');
 
         Test.startTest();
-        List<WaitlistTrackerController.WaitlistEntry> entries = WaitlistTrackerController.getWaitlist(inst.Id);
+        List<SummitEventsWaitlistTrackerController.WaitlistEntry> entries = SummitEventsWaitlistTrackerController.getWaitlist(inst.Id);
         Test.stopTest();
 
         System.assertEquals(5, entries.size());
@@ -124,11 +123,11 @@ private class WaitlistTrackerController_TEST {
         makeReg(inst, 'Waitlisted', 'W3');
 
         Test.startTest();
-        List<WaitlistTrackerController.WaitlistEntry> entries = WaitlistTrackerController.getWaitlist(inst.Id);
+        List<SummitEventsWaitlistTrackerController.WaitlistEntry> entries = SummitEventsWaitlistTrackerController.getWaitlist(inst.Id);
         Test.stopTest();
 
         Integer positioned = 0;
-        for (WaitlistTrackerController.WaitlistEntry e : entries) {
+        for (SummitEventsWaitlistTrackerController.WaitlistEntry e : entries) {
             if (e.isWaitlisted) {
                 positioned++;
                 System.assertNotEquals(null, e.position, 'Waitlisted entries should have a numeric position');
