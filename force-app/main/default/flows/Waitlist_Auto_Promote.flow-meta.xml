@@ -24,13 +24,15 @@
             <label>Yes Waitlisted Found</label>
         </rules>
     </decisions>
-    <description>When a seated registration (Registered, Confirmed or Attended) on a waitlist-enabled Instance is cancelled, promote the earliest waitlisted registration that fits in the freed seats to Registered. In Registrants plus Guests mode a party only fits if its Total_Number_of_Guests__c is no larger than the cancelled party's, so a promotion never overfills the instance. Hosted guests do not hold a seat in Individual Registrants mode, so cancelling one does not promote anyone.</description>
+    <description>When a seated registration (Registered, Confirmed or Attended) on a waitlist-enabled Instance is cancelled, promote the earliest waitlisted registration that fits in the free seats to Registered. Free seats are the instance's available capacity (which still counts the cancelled registration while this flow runs) plus the cancelled party's seats. In Registrants plus Guests mode a party only fits if its Total_Number_of_Guests__c is no larger than that, so a promotion never overfills the instance. Clone this flow to apply your own promotion rules. Hosted guests do not hold a seat in Individual Registrants mode, so cancelling one does not promote anyone.</description>
     <environments>Default</environments>
     <formulas>
-        <description>Largest party that fits in the seats freed by this cancellation. Individual Registrants mode counts one seat per registration, so any waitlisted registration fits.</description>
+        <description>Largest party that fits in the seats that are free once this cancellation counts. The instance roll-ups are recalculated after record-triggered flows run, so Current_Available_Capacity__c still counts the cancelled registration here; add its seats back. Individual Registrants mode takes one seat per registration. Never goes negative, so an overbooked instance promotes nobody.</description>
         <name>maxPartySize</name>
         <dataType>Number</dataType>
-        <expression>IF(ISPICKVAL({!$Record.Event_Instance__r.Capacity_Control__c}, &quot;Registrants plus Guests&quot;), {!$Record.Total_Number_of_Guests__c}, 1000000)</expression>
+        <expression>IF(ISPICKVAL({!$Record.Event_Instance__r.Capacity_Control__c}, &quot;Registrants plus Guests&quot;),
+    MAX({!$Record.Event_Instance__r.Current_Available_Capacity__c} + {!$Record.Total_Number_of_Guests__c}, 0),
+    IF({!$Record.Event_Instance__r.Current_Available_Capacity__c} + 1 &gt;= 1, 1000000, 0))</expression>
         <scale>0</scale>
     </formulas>
     <interviewLabel>Waitlist Auto Promote {!$Flow.CurrentDateTime}</interviewLabel>

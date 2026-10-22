@@ -36,11 +36,16 @@ private class SummitEventsWaitlistTrackerCtrl_TEST {
                 Status__c = status
         );
         insert r;
-        // Records inserted in one test share a CreatedDate second; space them out so FIFO order is deterministic
-        regSequence++;
-        Test.setCreatedDate(r.Id, Datetime.now().addMinutes(-100 + regSequence));
+        if (!insideTestContext) {
+            // Records inserted in one test share a CreatedDate second; space them out so FIFO order is deterministic
+            regSequence++;
+            Test.setCreatedDate(r.Id, Datetime.now().addMinutes(-100 + regSequence));
+        }
         return r;
     }
+
+    // Test.setCreatedDate() is not allowed after Test.startTest(), so registrations made there keep their natural CreatedDate
+    private static Boolean insideTestContext = false;
 
     private static Integer regSequence = 0;
 
@@ -176,6 +181,7 @@ private class SummitEventsWaitlistTrackerCtrl_TEST {
         makeReg(inst, 'Registered', 'Seat');
 
         Test.startTest();
+        insideTestContext = true;
         Summit_Events_Registration__c overflow = makeReg(inst, 'Registered', 'Overflow');
         Test.stopTest();
 
@@ -187,6 +193,7 @@ private class SummitEventsWaitlistTrackerCtrl_TEST {
         makeReg(inst, 'Registered', 'Seat');
 
         Test.startTest();
+        insideTestContext = true;
         Summit_Events_Registration__c overflow = makeReg(inst, 'Registered', 'Overflow');
         Test.stopTest();
 
@@ -237,5 +244,38 @@ private class SummitEventsWaitlistTrackerCtrl_TEST {
 
         System.assertEquals('Waitlisted', statusOf(bigParty.Id), 'A party larger than the freed seats should stay waitlisted');
         System.assertEquals('Registered', statusOf(single.Id), 'The next party that fits should be promoted');
+    }
+
+    @IsTest static void testCancelUsesAllFreeSeatsNotJustTheCancelledParty() {
+        // Capacity 6: two parties of 2 are seated, so 2 seats were already free. Cancelling one party frees 2 more (4 total),
+        // enough for the waitlisted party of 3 even though the cancelled party only held 2.
+        Summit_Events_Instance__c inst = makeInstance(6, true);
+        Summit_Events_Registration__c seated = makeReg(inst, 'Registered', 'SeatOne', 1);
+        makeReg(inst, 'Registered', 'SeatTwo', 1);
+        Summit_Events_Registration__c party = makeReg(inst, 'Waitlisted', 'Party', 2);
+
+        Test.startTest();
+        seated.Status__c = 'Cancelled';
+        update seated;
+        Test.stopTest();
+
+        System.assertEquals('Registered', statusOf(party.Id), 'Promotion should use every free seat, including seats that were already open');
+    }
+
+    @IsTest static void testCancelDoesNotPromoteWhenStillOverbooked() {
+        // Individual Registrants: capacity 1 but two seated (admin override). One cancellation leaves it exactly full.
+        Summit_Events_Instance__c inst = makeInstance(1, true);
+        inst.Capacity_Control__c = 'Individual Registrants';
+        update inst;
+        Summit_Events_Registration__c seated = makeReg(inst, 'Registered', 'SeatOne');
+        makeReg(inst, 'Confirmed', 'SeatTwo');
+        Summit_Events_Registration__c waiting = makeReg(inst, 'Waitlisted', 'Waiting');
+
+        Test.startTest();
+        seated.Status__c = 'Cancelled';
+        update seated;
+        Test.stopTest();
+
+        System.assertEquals('Waitlisted', statusOf(waiting.Id), 'No seat is free after the cancellation, so nobody is promoted');
     }
 }

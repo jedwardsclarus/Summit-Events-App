@@ -30,6 +30,17 @@ public without sharing class SummitEventsReadShared {
         ];
     }
 
+    /**
+     * Reads the waitlist code in system mode so guests never need field access to it.
+     *
+     * @param eventId Id of the Summit Event
+     * @return The Waitlist Code, or null when none is set
+     */
+    public static String getWaitlistCode(Id eventId) {
+        List<Summit_Events__c> events = [SELECT Waitlist_Code__c FROM Summit_Events__c WHERE Id = :eventId LIMIT 1];
+        return events.isEmpty() ? null : events[0].Waitlist_Code__c;
+    }
+
     public static Summit_Events__c getEventById(Id eventId) {
         return [
                 SELECT Name, Id, Event_Name__c, Event_description__c, Event_Footer__c, Event_Full_Text__c, Audience__c, Include_Time_frame_List__c,

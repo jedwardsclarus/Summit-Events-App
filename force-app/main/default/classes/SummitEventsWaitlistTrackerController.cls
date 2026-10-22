@@ -40,7 +40,7 @@ public with sharing class SummitEventsWaitlistTrackerController {
             entry.status = reg.Status__c;
             entry.substatus = reg.Substatus__c;
             entry.contactId = reg.Contact__c;
-            entry.contactName = reg.Contact__c != null ? reg.Contact__r.Name : reg.Registrant_First_Name__c + ' ' + reg.Registrant_Last_Name__c;
+            entry.contactName = reg.Contact__c != null ? reg.Contact__r.Name : (String.isNotBlank(reg.Registrant_First_Name__c) ? reg.Registrant_First_Name__c + ' ' : '') + (String.isNotBlank(reg.Registrant_Last_Name__c) ? reg.Registrant_Last_Name__c : '');
             entry.email = reg.Registrant_Email__c;
             entry.createdDate = reg.CreatedDate;
             entry.isCheckedIn = isAttended(reg);

@@ -211,8 +211,8 @@ public with sharing class SummitEventsConfirmationController {
                         // registrations are stamped as Waitlisted instead of Registered. Additive branch — every
                         // instance with waitlist off (or null) continues to hit the Registered path unchanged.
                         // Capacity of 0 or blank means capacity is not tracked, matching the flows and tracker.
-                        if (eventInstance != null && eventInstance.Enable_Waitlist__c == true
-                                && regCRUD.isInstanceFull(eventInstance.Id)) {
+                        if (eventInstance != null && (eventInstance.Enable_Waitlist__c == true || SummitEventsShared.isWaitlistCodeValid(eventInstance))
+                                && regCRUD.isInstanceFull(eventInstance.Id, eventRegistration.Id)) {
                             eventRegistration.Status__c = 'Waitlisted';
                         } else {
                             eventRegistration.Status__c = 'Registered';
@@ -306,15 +306,23 @@ public with sharing class SummitEventsConfirmationController {
 
         // Re-reads capacity with a row lock so two submissions racing for the last seat are serialized:
         // the second waits for the first to commit and then sees the updated count.
-        public Boolean isInstanceFull(Id instanceId) {
+        // Full means this registration's party does not fit in the seats left. In Registrants plus Guests mode the
+        // party is the registrant plus guests; in Individual Registrants mode every registration takes one seat.
+        // The registration is still Started here, so it is not yet counted against capacity.
+        public Boolean isInstanceFull(Id instanceId, Id registrationId) {
             Summit_Events_Instance__c inst = [
-                SELECT Capacity__c, Current_Available_Capacity__c
+                SELECT Capacity__c, Current_Available_Capacity__c, Capacity_Control__c
                 FROM Summit_Events_Instance__c
                 WHERE Id = :instanceId
                 FOR UPDATE
             ];
+            Decimal partySize = 1;
+            if (inst.Capacity_Control__c == 'Registrants plus Guests') {
+                Summit_Events_Registration__c party = [SELECT Total_Number_of_Guests__c FROM Summit_Events_Registration__c WHERE Id = :registrationId];
+                partySize = party.Total_Number_of_Guests__c != null && party.Total_Number_of_Guests__c > 0 ? party.Total_Number_of_Guests__c : 1;
+            }
             return inst.Capacity__c != null && inst.Capacity__c > 0
-                    && inst.Current_Available_Capacity__c != null && inst.Current_Available_Capacity__c <= 0;
+                    && inst.Current_Available_Capacity__c != null && inst.Current_Available_Capacity__c < partySize;
         }
 
         // Counts Waitlisted registrations on the same Instance ahead of this one (CreatedDate, then Id).
